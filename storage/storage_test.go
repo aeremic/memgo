@@ -5,7 +5,7 @@ import (
 )
 
 func TestSettingStorageValuesBasic(t *testing.T) {
-	s := Init()
+	s := New()
 
 	s.Set("testKey", "testValue")
 

@@ -19,7 +19,7 @@ type Storage struct {
 	Map map[Key]Value
 }
 
-func Init() *Storage {
+func New() *Storage {
 	s := &Storage{}
 	s.Map = make(map[Key]Value)
 
