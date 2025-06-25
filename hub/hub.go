@@ -66,9 +66,6 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			continue
 		}
 
-		// GET abc
-		// SET abc ccc
-		// GETALL
 		command := strings.ToUpper(args[0])
 		switch command {
 		case STOP:
@@ -111,9 +108,6 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			log.Printf("Unsupported command %s received. Stopping thread..\n", command)
 			return
 		}
-
-		// fmt.Printf("incoming cmd: %s\n", command)
-		// conn.Write([]byte(fmt.Sprintf("following cmd received: %s\n", command)))
 	}
 }
 
