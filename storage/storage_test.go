@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSettingStorageValuesBasic(t *testing.T) {
+func TestGet(t *testing.T) {
 	s := New()
 
 	s.Set("testKey", "testValue")
@@ -12,6 +12,21 @@ func TestSettingStorageValuesBasic(t *testing.T) {
 	actual := s.Get("testKey")
 
 	expected := Value{Data: "testValue"}
+	if expected.Data != actual {
+		t.Fatalf("invalid actual value. got %s instead of %s",
+			actual, expected.Data)
+	}
+}
+
+func TestGetAllFormatted(t *testing.T) {
+	s := New()
+
+	s.Set("testKey1", "testValue1")
+	s.Set("testKey2", "testValue2")
+
+	actual := s.GetAll()
+
+	expected := `{"testKey2":"testValue2", "testKey1":"testValue1"}`
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)

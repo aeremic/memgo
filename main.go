@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"memgo/hub"
+	"memgo/storage"
 	"os"
 )
 
@@ -24,10 +25,11 @@ func main() {
 
 	fmt.Printf("Starting hub on: %s:%s\n", HOST, PORT)
 
+	s := storage.New()
 	ctx, cancel := context.WithCancel(context.Background())
 
 	h := hub.New(HOST, PORT)
-	if err := h.Run(ctx, cancel); err != nil {
+	if err := h.Run(ctx, cancel, s); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"memgo/storage"
 	"net"
 	"strings"
 )
@@ -13,9 +14,10 @@ import (
 type ID string
 
 const (
-	STOP = "STOP"
-	GET  = "GET"
-	SET  = "SET"
+	STOP   = "STOP"
+	GET    = "GET"
+	GETALL = "GETALL"
+	SET    = "SET"
 )
 
 type Command struct {
@@ -34,7 +36,7 @@ func New(host, port string) *Hub {
 	}
 }
 
-func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.Conn) {
+func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.Conn, storage *storage.Storage) {
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
@@ -64,16 +66,47 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			continue
 		}
 
+		// GET abc
+		// SET abc ccc
+		// GETALL
 		command := strings.ToUpper(args[0])
 		switch command {
 		case STOP:
 			fmt.Printf("%s command received. Stopping thread and terminating hub..\n", STOP)
 			cancel()
 			return
+		case GETALL:
+			fmt.Printf("%s command received.\n", GET)
+			if len(args) != 1 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			res := storage.GetAll()
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		case GET:
 			fmt.Printf("%s command received.\n", GET)
+			if len(args) != 2 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			res := storage.Get(args[1])
+			if res == "" {
+				conn.Write([]byte(fmt.Sprintf("NotFound.\n")))
+				continue
+			}
+
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		case SET:
 			fmt.Printf("%s command received.\n", SET)
+			if len(args) != 3 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			storage.Set(args[1], args[2])
+			conn.Write([]byte(fmt.Sprintf("Success\n")))
 		default:
 			log.Printf("Unsupported command %s received. Stopping thread..\n", command)
 			return
@@ -84,7 +117,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 	}
 }
 
-func (h *Hub) Run(ctx context.Context, cancel context.CancelFunc) error {
+func (h *Hub) Run(ctx context.Context, cancel context.CancelFunc, storage *storage.Storage) error {
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", h.host, h.port))
 	if err != nil {
 		log.Fatal(err)
@@ -112,6 +145,6 @@ func (h *Hub) Run(ctx context.Context, cancel context.CancelFunc) error {
 			}
 		}
 
-		go handleConnection(ctx, cancel, conn)
+		go handleConnection(ctx, cancel, conn, storage)
 	}
 }
