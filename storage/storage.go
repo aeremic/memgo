@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 type Result struct {
@@ -23,6 +24,7 @@ type Value struct {
 
 type Storage struct {
 	Map map[Key]Value
+	mu  sync.Mutex
 }
 
 func New() *Storage {
@@ -61,15 +63,24 @@ func (s *Storage) GetAll() string {
 }
 
 func (s *Storage) Set(k string, d string) Result {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.Map[Key(k)] = Value{Data: d}
 
 	return Result{true, 0}
 }
 
 func (s *Storage) Delete(k string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	delete(s.Map, Key(k))
 }
 
 func (s *Storage) DeleteAll() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.Map = make(map[Key]Value)
 }
