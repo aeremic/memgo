@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-type ID string
-
 const (
 	STOP      = "STOP"
 	GET       = "GET"
@@ -144,8 +142,6 @@ func (h *Hub) Run(ctx context.Context, cancel context.CancelFunc, storage *stora
 	}()
 
 	for {
-		fmt.Printf("Serving client..\n")
-
 		conn, err := listener.Accept()
 		if err != nil {
 			select {
