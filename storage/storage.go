@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/xyproto/jpath"
 )
 
 type Result struct {
@@ -83,4 +85,38 @@ func (s *Storage) DeleteAll() {
 	defer s.mu.Unlock()
 
 	s.Map = make(map[Key]Value)
+}
+
+func (s *Storage) GetByKeyAndPath(k string, p string) string {
+	res := s.Get(k)
+
+	document, err := jpath.New([]byte(res))
+	if err != nil {
+		return err.Error()
+	}
+
+	return document.GetNode(p).String()
+}
+
+func (s *Storage) Select(p string) string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for key, value := range s.Map {
+		document, err := jpath.New([]byte(value.Data))
+		if err != nil {
+			continue
+		}
+
+		_, exist := document.CheckGet(p)
+		if exist {
+			elements = append(elements, fmt.Sprintf(`"%s":"%s"`, key, value.Data))
+		}
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("}")
+
+	return out.String()
 }

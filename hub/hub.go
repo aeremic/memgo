@@ -18,6 +18,7 @@ const (
 	SET       = "SET"
 	DELETE    = "DELETE"
 	DELETEALL = "DELETEALL"
+	GETBYPATH = "GETBYPATH"
 )
 
 type Hub struct {
@@ -119,6 +120,20 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			storage.Delete(args[1])
 			conn.Write([]byte(fmt.Sprintf("Success\n")))
+		case GETBYPATH:
+			fmt.Printf("%s command received.\n", GETBYPATH)
+			if len(args) != 3 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			res := storage.GetByKeyAndPath(args[1], args[2])
+			if res == "" {
+				conn.Write([]byte(fmt.Sprintf("NotFound.\n")))
+				continue
+			}
+
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		default:
 			log.Printf("Unsupported command %s received. Stopping thread..\n", command)
 			return
