@@ -14,15 +14,13 @@ import (
 type ID string
 
 const (
-	STOP   = "STOP"
-	GET    = "GET"
-	GETALL = "GETALL"
-	SET    = "SET"
+	STOP      = "STOP"
+	GET       = "GET"
+	GETALL    = "GETALL"
+	SET       = "SET"
+	DELETE    = "DELETE"
+	DELETEALL = "DELETEALL"
 )
-
-type Command struct {
-	Id ID
-}
 
 type Hub struct {
 	host string
@@ -36,7 +34,8 @@ func New(host, port string) *Hub {
 	}
 }
 
-func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.Conn, storage *storage.Storage) {
+func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.Conn,
+	storage *storage.Storage) {
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
@@ -73,7 +72,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			cancel()
 			return
 		case GETALL:
-			fmt.Printf("%s command received.\n", GET)
+			fmt.Printf("%s command received.\n", GETALL)
 			if len(args) != 1 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -103,6 +102,24 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			}
 
 			storage.Set(args[1], args[2])
+			conn.Write([]byte(fmt.Sprintf("Success\n")))
+		case DELETEALL:
+			fmt.Printf("%s command received.\n", DELETE)
+			if len(args) != 1 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			storage.DeleteAll()
+			conn.Write([]byte(fmt.Sprintf("Success\n")))
+		case DELETE:
+			fmt.Printf("%s command received.\n", GET)
+			if len(args) != 2 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			storage.Delete(args[1])
 			conn.Write([]byte(fmt.Sprintf("Success\n")))
 		default:
 			log.Printf("Unsupported command %s received. Stopping thread..\n", command)

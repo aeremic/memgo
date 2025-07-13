@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestGet(t *testing.T) {
+func TestGetSet(t *testing.T) {
 	s := New()
 
 	s.Set("testKey", "testValue")
@@ -26,7 +26,37 @@ func TestGetAllFormatted(t *testing.T) {
 
 	actual := s.GetAll()
 
-	expected := `{"testKey2":"testValue2", "testKey1":"testValue1"}`
+	expected := `{"testKey1":"testValue1", "testKey2":"testValue2"}`
+	if expected != actual {
+		t.Fatalf("invalid actual value. got %s instead of %s",
+			actual, expected)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	s := New()
+
+	s.Set("testKey", "testValue")
+
+	s.Delete("testKey")
+
+	actual := s.Get("testKey")
+	expected := Value{Data: ""}
+	if expected.Data != actual {
+		t.Fatalf("invalid actual value. got %s instead of %s",
+			actual, expected.Data)
+	}
+}
+
+func TestDeleteAll(t *testing.T) {
+	s := New()
+
+	s.Set("testKey", "testValue")
+
+	s.DeleteAll()
+
+	actual := s.GetAll()
+	expected := "{}"
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)

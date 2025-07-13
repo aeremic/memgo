@@ -65,3 +65,11 @@ func (s *Storage) Set(k string, d string) Result {
 
 	return Result{true, 0}
 }
+
+func (s *Storage) Delete(k string) {
+	delete(s.Map, Key(k))
+}
+
+func (s *Storage) DeleteAll() {
+	s.Map = make(map[Key]Value)
+}
