@@ -69,6 +69,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		case STOP:
 			fmt.Printf("%s command received. Stopping thread and terminating hub..\n", STOP)
 			cancel()
+			conn.Write([]byte(fmt.Sprintf("%s\n", "SUCCESS")))
 			return
 		case GETALL:
 			fmt.Printf("%s command received.\n", GETALL)
