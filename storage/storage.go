@@ -9,14 +9,11 @@ import (
 	"github.com/xyproto/jpath"
 )
 
-type Result struct {
-	Success bool
-	Error   int
-}
-
 const (
-	_ int = iota
-	EMPTY_KEY
+	EMPTY_KEY = "EMPTY_KEY"
+	NOT_FOUND = "NOT_FOUND"
+	EMPTY     = "EMPTY"
+	SUCCESS   = "SUCCESS"
 )
 
 type Key string
@@ -38,12 +35,12 @@ func New() *Storage {
 
 func (s *Storage) Get(k string) string {
 	if k == "" {
-		return ""
+		return EMPTY_KEY
 	}
 
 	result, ok := s.Map[Key(k)]
 	if !ok {
-		return ""
+		return NOT_FOUND
 	}
 
 	return result.Data
@@ -64,27 +61,31 @@ func (s *Storage) GetAll() string {
 	return out.String()
 }
 
-func (s *Storage) Set(k string, d string) Result {
+func (s *Storage) Set(k string, d string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.Map[Key(k)] = Value{Data: d}
 
-	return Result{true, 0}
+	return SUCCESS
 }
 
-func (s *Storage) Delete(k string) {
+func (s *Storage) Delete(k string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	delete(s.Map, Key(k))
+
+	return SUCCESS
 }
 
-func (s *Storage) DeleteAll() {
+func (s *Storage) DeleteAll() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.Map = make(map[Key]Value)
+
+	return SUCCESS
 }
 
 func (s *Storage) GetByKeyAndPath(k string, p string) string {
@@ -95,7 +96,12 @@ func (s *Storage) GetByKeyAndPath(k string, p string) string {
 		return err.Error()
 	}
 
-	return document.GetNode(p).String()
+	node := document.GetNode(p)
+	if node != nil {
+		node.String()
+	}
+
+	return NOT_FOUND
 }
 
 func (s *Storage) Select(p string) string {
@@ -114,9 +120,13 @@ func (s *Storage) Select(p string) string {
 		}
 	}
 
-	out.WriteString("{")
-	out.WriteString(strings.Join(elements, ", "))
-	out.WriteString("}")
+	if len(elements) > 0 {
+		out.WriteString("{")
+		out.WriteString(strings.Join(elements, ", "))
+		out.WriteString("}")
 
-	return out.String()
+		return out.String()
+	}
+
+	return NOT_FOUND
 }

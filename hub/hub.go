@@ -87,11 +87,6 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			}
 
 			res := storage.Get(args[1])
-			if res == "" {
-				conn.Write([]byte(fmt.Sprintf("NotFound.\n")))
-				continue
-			}
-
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		case SET:
 			fmt.Printf("%s command received.\n", SET)
@@ -100,8 +95,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 				continue
 			}
 
-			storage.Set(args[1], args[2])
-			conn.Write([]byte(fmt.Sprintf("Success\n")))
+			res := storage.Set(args[1], args[2])
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		case DELETEALL:
 			fmt.Printf("%s command received.\n", DELETE)
 			if len(args) != 1 {
@@ -109,8 +104,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 				continue
 			}
 
-			storage.DeleteAll()
-			conn.Write([]byte(fmt.Sprintf("Success\n")))
+			res := storage.DeleteAll()
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		case DELETE:
 			fmt.Printf("%s command received.\n", GET)
 			if len(args) != 2 {
@@ -118,8 +113,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 				continue
 			}
 
-			storage.Delete(args[1])
-			conn.Write([]byte(fmt.Sprintf("Success\n")))
+			res := storage.Delete(args[1])
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		case GETBYPATH:
 			fmt.Printf("%s command received.\n", GETBYPATH)
 			if len(args) != 3 {
@@ -128,11 +123,6 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			}
 
 			res := storage.GetByKeyAndPath(args[1], args[2])
-			if res == "" {
-				conn.Write([]byte(fmt.Sprintf("NotFound.\n")))
-				continue
-			}
-
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		default:
 			log.Printf("Unsupported command %s received. Stopping thread..\n", command)
