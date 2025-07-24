@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	STOP      = "STOP"
-	GET       = "GET"
-	GETALL    = "GETALL"
-	SET       = "SET"
-	DELETE    = "DELETE"
-	DELETEALL = "DELETEALL"
-	GETBYPATH = "GETBYPATH"
+	STOP            = "STOP"
+	GET             = "GET"
+	GETALL          = "GETALL"
+	SET             = "SET"
+	DELETE          = "DELETE"
+	DELETEALL       = "DELETEALL"
+	GETBYKEYANDPATH = "GETBYKEYANDPATH"
+	SELECTBYPATH    = "SELECTBYPATH"
 )
 
 type Hub struct {
@@ -116,14 +117,23 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.Delete(args[1])
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case GETBYPATH:
-			fmt.Printf("%s command received.\n", GETBYPATH)
+		case GETBYKEYANDPATH:
+			fmt.Printf("%s command received.\n", GETBYKEYANDPATH)
 			if len(args) != 3 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
 			}
 
 			res := storage.GetByKeyAndPath(args[1], args[2])
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
+		case SELECTBYPATH:
+			fmt.Printf("%s command received.\n", SELECTBYPATH)
+			if len(args) != 2 {
+				log.Printf("Unsupported command %s received.\n", command)
+				continue
+			}
+
+			res := storage.SelectByPath(args[1])
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 		default:
 			log.Printf("Unsupported command %s received. Stopping thread..\n", command)

@@ -16,6 +16,8 @@ func TestGetSet(t *testing.T) {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected.Data)
 	}
+
+	s.Dispose()
 }
 
 func TestGetAllFormatted(t *testing.T) {
@@ -31,6 +33,8 @@ func TestGetAllFormatted(t *testing.T) {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
 	}
+
+	s.Dispose()
 }
 
 func TestDelete(t *testing.T) {
@@ -41,11 +45,13 @@ func TestDelete(t *testing.T) {
 	s.Delete("testKey")
 
 	actual := s.Get("testKey")
-	expected := Value{Data: ""}
-	if expected.Data != actual {
+	expected := NOT_FOUND
+	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
-			actual, expected.Data)
+			actual, expected)
 	}
+
+	s.Dispose()
 }
 
 func TestDeleteAll(t *testing.T) {
@@ -56,17 +62,20 @@ func TestDeleteAll(t *testing.T) {
 	s.DeleteAll()
 
 	actual := s.GetAll()
-	expected := "{}"
+	expected := NOT_FOUND
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
 	}
+
+	s.Dispose()
 }
 
 func TestGetByKeyAndPath_ShouldReturnName(t *testing.T) {
 	s := New()
 
 	s.Set("testKey", `{"a":2, "b":3, "people":{"names": ["Bob", "Alice"]}}`)
+	s.Set("testKey2", `{"a":4, "b":5, "cars":{"names": ["Car1", "Car2"]}}`)
 	actual := s.GetByKeyAndPath("testKey", ".people.names[0]")
 
 	expected := "Bob"
@@ -74,29 +83,34 @@ func TestGetByKeyAndPath_ShouldReturnName(t *testing.T) {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
 	}
+
+	s.Dispose()
 }
 
 func TestGetByKeyAndPath_ShouldReturnEmpty(t *testing.T) {
 	s := New()
 
 	s.Set("testKey", `{"a":2, "b":3}`)
+	s.Set("testKey2", `{"a":4, "b":5, "cars":{"names": ["Car1", "Car2"]}}`)
 	actual := s.GetByKeyAndPath("testKey", ".people.names[0]")
 
-	expected := ""
+	expected := NOT_FOUND
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
 	}
+
+	s.Dispose()
 }
 
-func TestSelect(t *testing.T) {
+func TestSelectByPath_ShouldReturnMultipleResult(t *testing.T) {
 	s := New()
 
 	s.Set("testKey1", `{"a":2, "b":3, "people":{"names": ["Bob1", "Alice"]}}`)
 	s.Set("testKey2", `{"a":2, "b":3, "people":{"names": ["Bob2", "Alice"]}}`)
 	s.Set("testKey3", `{"a":2, "b":3}`)
 
-	actual := s.Select(".people.names[0]")
+	actual := s.SelectByPath(".people.names[0]")
 
 	expected :=
 		`{"testKey1":"{"a":2, "b":3, "people":{"names": ["Bob1", "Alice"]}}", "testKey2":"{"a":2, "b":3, "people":{"names": ["Bob2", "Alice"]}}"}`
@@ -104,4 +118,41 @@ func TestSelect(t *testing.T) {
 		t.Fatalf("invalid actual value. got \n%s\ninstead of \n%s\n",
 			actual, expected)
 	}
+
+	s.Dispose()
+}
+
+func TestSelectByPath_ShouldReturnSingleResult(t *testing.T) {
+	s := New()
+
+	s.Set("testKey1", `{"a":2, "b":3, "people":{"names": ["Bob1", "Alice"]}}`)
+	s.Set("testKey3", `{"a":2, "b":3}`)
+
+	actual := s.SelectByPath(".people.names[0]")
+
+	expected :=
+		`{"testKey1":"{"a":2, "b":3, "people":{"names": ["Bob1", "Alice"]}}"}`
+	if expected != actual {
+		t.Fatalf("invalid actual value. got \n%s\ninstead of \n%s\n",
+			actual, expected)
+	}
+
+	s.Dispose()
+}
+
+func TestSelectByPath_ShouldReturnEmptyResult(t *testing.T) {
+	s := New()
+
+	s.Set("testKey2", `{"a":2, "b":3, "dealer":{"cars": ["Car1", "Car2"]}}`)
+	s.Set("testKey3", `{"a":2, "b":3}`)
+
+	actual := s.SelectByPath(".people.names[0]")
+
+	expected := NOT_FOUND
+	if expected != actual {
+		t.Fatalf("invalid actual value. got \n%s\ninstead of \n%s\n",
+			actual, expected)
+	}
+
+	s.Dispose()
 }

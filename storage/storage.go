@@ -33,6 +33,15 @@ func New() *Storage {
 	return s
 }
 
+func (s *Storage) Dispose() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s = nil
+
+	return SUCCESS
+}
+
 func (s *Storage) Get(k string) string {
 	if k == "" {
 		return EMPTY_KEY
@@ -54,11 +63,15 @@ func (s *Storage) GetAll() string {
 		elements = append(elements, fmt.Sprintf(`"%s":"%s"`, key, value.Data))
 	}
 
-	out.WriteString("{")
-	out.WriteString(strings.Join(elements, ", "))
-	out.WriteString("}")
+	if len(elements) > 0 {
+		out.WriteString("{")
+		out.WriteString(strings.Join(elements, ", "))
+		out.WriteString("}")
 
-	return out.String()
+		return out.String()
+	}
+
+	return NOT_FOUND
 }
 
 func (s *Storage) Set(k string, d string) string {
@@ -97,14 +110,14 @@ func (s *Storage) GetByKeyAndPath(k string, p string) string {
 	}
 
 	node := document.GetNode(p)
-	if node != nil {
-		node.String()
+	if node != nil && node.String() != "" {
+		return node.String()
 	}
 
 	return NOT_FOUND
 }
 
-func (s *Storage) Select(p string) string {
+func (s *Storage) SelectByPath(p string) string {
 	var out bytes.Buffer
 
 	elements := []string{}
