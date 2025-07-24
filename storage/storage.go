@@ -114,8 +114,8 @@ func (s *Storage) Select(p string) string {
 			continue
 		}
 
-		_, exist := document.CheckGet(p)
-		if exist {
+		node := document.GetNode(p)
+		if node != nil && node.String() != "" {
 			elements = append(elements, fmt.Sprintf(`"%s":"%s"`, key, value.Data))
 		}
 	}
