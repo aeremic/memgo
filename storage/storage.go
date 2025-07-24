@@ -43,6 +43,9 @@ func (s *Storage) Dispose() string {
 }
 
 func (s *Storage) Get(k string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if k == "" {
 		return EMPTY_KEY
 	}
@@ -56,6 +59,9 @@ func (s *Storage) Get(k string) string {
 }
 
 func (s *Storage) GetAll() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var out bytes.Buffer
 
 	elements := []string{}
@@ -102,6 +108,9 @@ func (s *Storage) DeleteAll() string {
 }
 
 func (s *Storage) GetByKeyAndPath(k string, p string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	res := s.Get(k)
 
 	document, err := jpath.New([]byte(res))
@@ -118,6 +127,9 @@ func (s *Storage) GetByKeyAndPath(k string, p string) string {
 }
 
 func (s *Storage) SelectByPath(p string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var out bytes.Buffer
 
 	elements := []string{}
