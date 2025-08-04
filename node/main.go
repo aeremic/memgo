@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"memgo/hub"
-	"memgo/storage"
+	"memgo_node/hub"
+	"memgo_node/storage"
 	"os"
 )
 
