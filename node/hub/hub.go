@@ -22,6 +22,10 @@ const (
 	SELECTBYPATH    = "SELECTBYPATH"
 )
 
+const (
+	SUCCESS = "SUCCESS"
+)
+
 type Hub struct {
 	host string
 	port string
@@ -70,7 +74,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		case STOP:
 			fmt.Printf("%s command received. Stopping thread and terminating hub..\n", STOP)
 			cancel()
-			conn.Write([]byte(fmt.Sprintf("%s\n", "SUCCESS")))
+			conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
 			return
 		case GETALL:
 			fmt.Printf("%s command received.\n", GETALL)
@@ -149,6 +153,7 @@ func (h *Hub) Run(ctx context.Context, cancel context.CancelFunc, storage *stora
 	}
 	defer listener.Close()
 
+	fmt.Printf(SUCCESS + "\n")
 	fmt.Println("Listening on ", listener.Addr())
 
 	go func() {

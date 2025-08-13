@@ -23,8 +23,6 @@ func main() {
 		PORT = "1234"
 	}
 
-	fmt.Printf("Starting hub on: %s:%s\n", HOST, PORT)
-
 	s := storage.New()
 	ctx, cancel := context.WithCancel(context.Background())
 

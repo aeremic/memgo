@@ -7,19 +7,15 @@ import (
 	"io"
 	"log"
 	"net"
-	"os/exec"
-	"strconv"
+	"os"
 	"strings"
 )
 
-// TODO: put in json config
-var PATH string      // full path to exe
-var HOST string      // host addr; should be changable also for each node
-var NUM_OF_NODES int // TODO: min max
-var INITIAL_PORT int // TODO: should be configurable for each node
+var NODE_CONNECTIONS []*net.TCPConn
 
 const (
-	STOP = "STOP"
+	STOP    = "STOP"
+	SUCCESS = "SUCCESS"
 )
 
 func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.Conn) {
@@ -55,22 +51,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		command := strings.ToUpper(args[0])
 		switch command {
 		case STOP:
-			for i := 0; i < NUM_OF_NODES; i++ {
-				tcpAddr, err := net.ResolveTCPAddr("tcp", HOST+":"+strconv.Itoa(INITIAL_PORT+i))
-				if err != nil {
-					// TODO: Log
-					log.Fatal(err)
-					return
-				}
-
-				nodeconn, err := net.DialTCP("tcp", nil, tcpAddr)
-				if err != nil {
-					// TODO: Log
-					log.Fatal(err)
-					return
-				}
-
-				res, err := nodeconn.Write([]byte(STOP + "\n"))
+			for i := 0; i < len(NODE_CONNECTIONS); i++ {
+				res, err := NODE_CONNECTIONS[i].Write([]byte(STOP + "\n"))
 				if err != nil {
 					// TODO: Log
 					log.Fatal(err)
@@ -86,7 +68,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			fmt.Printf("%s command received. Stopping thread and terminating orchestrator..\n", STOP)
 			cancel()
-			conn.Write([]byte(fmt.Sprintf("%s\n", "SUCCESS")))
+			conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
 
 			return
 		default:
@@ -97,34 +79,45 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 }
 
 func main() {
-	PATH = "/Users/eremic/memgo/node/memgo_node"
-	HOST = "localhost"
-	NUM_OF_NODES = 2
-	INITIAL_PORT = 1234
+	nodes := [2]string{"localhost:1234", "localhost:1235"} // TODO: Pull from config file
 
-	for i := 0; i < NUM_OF_NODES; i++ {
-		cmd := exec.Command(PATH, HOST, strconv.Itoa(INITIAL_PORT+i))
-
-		if err := cmd.Start(); err != nil {
+	for i := 0; i < len(nodes); i++ {
+		tcpAddr, err := net.ResolveTCPAddr("tcp", nodes[i])
+		if err != nil {
 			log.Fatal(err)
-			break
 		}
+
+		conn, err := net.DialTCP("tcp", nil, tcpAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		NODE_CONNECTIONS = append(NODE_CONNECTIONS, conn)
 	}
 
-	fmt.Printf("Successfully started %d of nodes..\n", NUM_OF_NODES)
+	var PORT string
+	var HOST string
 
-	// TODO: Stop processees
-	// TODO: Run listener for orch
+	args := os.Args
+	if len(args) == 3 {
+		HOST = args[1]
+		PORT = args[2]
+	} else {
+		fmt.Printf("Port number and host are not provided, default ones will be used (localhost:1233).\n")
+		HOST = "localhost"
+		PORT = "1233"
+	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", HOST, strconv.Itoa(INITIAL_PORT-1)))
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", HOST, PORT))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer listener.Close()
 
+	fmt.Printf(SUCCESS + "\n")
 	fmt.Println("Listening on ", listener.Addr())
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
 		<-ctx.Done()
