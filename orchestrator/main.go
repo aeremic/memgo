@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -73,7 +76,34 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			return
 		default:
 			// TODO: Find node to send the request
-			return
+			if len(args) < 2 {
+				continue
+			}
+
+			// Consistent hashing
+			key := args[1]
+			hash := md5.Sum([]byte(key))
+			hashString := hex.EncodeToString(hash[:])
+			hashDecimal, err := strconv.ParseInt(hashString, 36, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			node_index := int(hashDecimal) % len(NODE_CONNECTIONS)
+			res, err := NODE_CONNECTIONS[node_index].Write([]byte(command))
+			if err != nil {
+				// TODO: Log
+				log.Fatal(err)
+				return
+			}
+
+			if res == 0 {
+				// TODO: Log
+				log.Fatalf("Result from node command is 0")
+				return
+			}
+
+			continue
 		}
 	}
 }
