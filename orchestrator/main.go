@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -112,10 +113,31 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			return
 		} else {
 			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH should agreggate results
+			// TODO: getall {"aaa":"bbb"}{"test":"aaa"} and getall NOTFOUND {"test":"aaa"} fix
 			switch command {
-			case GETALL:
-			case DELETEALL:
-			case SELECTBYPATH:
+			case GETALL, DELETEALL, SELECTBYPATH:
+				var out bytes.Buffer
+				for i := 0; i < len(NODE_CONNECTIONS); i++ {
+					err := forwardMsg(i, line)
+					if err != nil {
+						log.Printf("Error on forwarding message: %v", err)
+						continue
+					}
+
+					bytes, err := receiveMsg(i)
+					if err != nil {
+						log.Printf("Error on receiving message: %v", err)
+						continue
+					}
+
+					out.WriteString(string(bytes))
+				}
+
+				res := out.String()
+				if res != "" {
+					conn.Write([]byte(fmt.Sprintf("%s", res)))
+				}
+
 				continue
 			default:
 				if len(args) < 2 {
