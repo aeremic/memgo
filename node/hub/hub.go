@@ -55,17 +55,19 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			if err == io.EOF {
 				continue
 			}
-			fmt.Printf("%v", err)
+			fmt.Printf("Error on reading string: %v", err)
 			return
 		}
 
 		line = strings.TrimSpace(line)
 		if line == "" {
+			log.Println("Empty command error")
 			continue
 		}
 
 		args := strings.Fields(line)
 		if len(args) == 0 {
+			log.Println("Invalid number of arguments")
 			continue
 		}
 

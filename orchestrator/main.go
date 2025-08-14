@@ -35,34 +35,33 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			if err == io.EOF {
 				continue
 			}
-			fmt.Printf("%v", err)
+			fmt.Printf("Error on reading string: %v", err)
 			return
 		}
 
 		preparedLine := strings.TrimSpace(line)
 		if preparedLine == "" {
+			log.Println("Empty command error")
 			continue
 		}
 
 		args := strings.Fields(preparedLine)
 		if len(args) == 0 {
+			log.Println("Invalid number of arguments")
 			continue
 		}
 
 		command := strings.ToUpper(args[0])
-		switch command {
-		case STOP:
+		if command == STOP {
 			for i := 0; i < len(NODE_CONNECTIONS); i++ {
 				res, err := NODE_CONNECTIONS[i].Write([]byte(STOP + "\n"))
 				if err != nil {
-					// TODO: Log
-					log.Fatal(err)
+					log.Println(err)
 					return
 				}
 
 				if res == 0 {
-					// TODO: Log
-					log.Fatalf("Result from node command is 0")
+					log.Println("Result from node command is 0")
 					return
 				}
 			}
@@ -72,11 +71,13 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
 
 			return
-		default:
-			// TODO: Issue for getall and commands that don't have keys
-			// TODO: Read commands should return res
+		} else {
+			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH
+			// should agreggate results
+			// TODO: Optimize opening buffers
 
 			if len(args) < 2 {
+				log.Println("Invalid number of arguments")
 				continue
 			}
 
@@ -88,16 +89,23 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			node_index := int(h.Sum32()) % len(NODE_CONNECTIONS)
 			res, err := NODE_CONNECTIONS[node_index].Write([]byte(line))
 			if err != nil {
-				// TODO: Log
-				log.Fatal(err)
-				return
+				log.Println(err)
+				continue
 			}
 
 			if res == 0 {
-				// TODO: Log
-				log.Fatalf("Result from node command is 0")
-				return
+				log.Println("Result from node command is 0")
+				continue
 			}
+
+			buffer := bufio.NewReader(NODE_CONNECTIONS[node_index]) // TODO: Should reuse
+			bytes, err := buffer.ReadBytes('\n')
+			if err != nil {
+				log.Println("Result from node command is invalid")
+				continue
+			}
+
+			conn.Write(bytes)
 
 			continue
 		}
