@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -19,10 +20,43 @@ type Node struct {
 
 var NODE_CONNECTIONS []Node
 
+// TODO: Make common package for command enums
 const (
-	STOP    = "STOP"
-	SUCCESS = "SUCCESS"
+	STOP         = "STOP"
+	SUCCESS      = "SUCCESS"
+	GETALL       = "GETALL"
+	DELETEALL    = "DELETEALL"
+	SELECTBYPATH = "SELECTBYPATH"
 )
+
+func getNodeIndex(key string) int {
+	h := fnv.New32a()
+	h.Write([]byte(key))
+
+	return int(h.Sum32()) % len(NODE_CONNECTIONS)
+}
+
+func forwardMsg(node_index int, line string) error {
+	res, err := NODE_CONNECTIONS[node_index].Conn.Write([]byte(line))
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return errors.New("Result from node command is 0")
+	}
+
+	return nil
+}
+
+func receiveMsg(node_index int) ([]byte, error) {
+	bytes, err := NODE_CONNECTIONS[node_index].Reader.ReadBytes('\n')
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return bytes, nil
+}
 
 func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.Conn) {
 	defer conn.Close()
@@ -77,40 +111,37 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			return
 		} else {
-			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH
-			// should agreggate results
+			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH should agreggate results
+			switch command {
+			case GETALL:
+			case DELETEALL:
+			case SELECTBYPATH:
+				continue
+			default:
+				if len(args) < 2 {
+					log.Println("Invalid number of arguments")
+					continue
+				}
 
-			if len(args) < 2 {
-				log.Println("Invalid number of arguments")
+				// Consistent hashing
+				// TODO: Investigate adding/removing node solutions
+				node_index := getNodeIndex(args[1])
+				err := forwardMsg(node_index, line)
+				if err != nil {
+					log.Printf("Error on forwarding message: %v", err)
+					continue
+				}
+
+				bytes, err := receiveMsg(node_index)
+				if err != nil {
+					log.Printf("Error on receiving message: %v", err)
+					continue
+				}
+
+				conn.Write(bytes)
+
 				continue
 			}
-
-			// Consistent hashing
-			key := args[1]
-			h := fnv.New32a()
-			h.Write([]byte(key))
-
-			node_index := int(h.Sum32()) % len(NODE_CONNECTIONS)
-			res, err := NODE_CONNECTIONS[node_index].Conn.Write([]byte(line))
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			if res == 0 {
-				log.Println("Result from node command is 0")
-				continue
-			}
-
-			bytes, err := NODE_CONNECTIONS[node_index].Reader.ReadBytes('\n')
-			if err != nil {
-				log.Println("Result from node command is invalid")
-				continue
-			}
-
-			conn.Write(bytes)
-
-			continue
 		}
 	}
 }
@@ -169,6 +200,7 @@ func main() {
 			case <-ctx.Done():
 				return
 			default:
+				log.Println(err)
 				return
 			}
 		}
