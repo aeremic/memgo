@@ -12,7 +12,12 @@ import (
 	"strings"
 )
 
-var NODE_CONNECTIONS []*net.TCPConn
+type Node struct {
+	Conn   *net.TCPConn
+	Reader *bufio.Reader
+}
+
+var NODE_CONNECTIONS []Node
 
 const (
 	STOP    = "STOP"
@@ -54,7 +59,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		command := strings.ToUpper(args[0])
 		if command == STOP {
 			for i := 0; i < len(NODE_CONNECTIONS); i++ {
-				res, err := NODE_CONNECTIONS[i].Write([]byte(STOP + "\n"))
+				res, err := NODE_CONNECTIONS[i].Conn.Write([]byte(STOP + "\n"))
 				if err != nil {
 					log.Println(err)
 					return
@@ -74,7 +79,6 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		} else {
 			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH
 			// should agreggate results
-			// TODO: Optimize opening buffers
 
 			if len(args) < 2 {
 				log.Println("Invalid number of arguments")
@@ -87,7 +91,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			h.Write([]byte(key))
 
 			node_index := int(h.Sum32()) % len(NODE_CONNECTIONS)
-			res, err := NODE_CONNECTIONS[node_index].Write([]byte(line))
+			res, err := NODE_CONNECTIONS[node_index].Conn.Write([]byte(line))
 			if err != nil {
 				log.Println(err)
 				continue
@@ -98,8 +102,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 				continue
 			}
 
-			buffer := bufio.NewReader(NODE_CONNECTIONS[node_index]) // TODO: Should reuse
-			bytes, err := buffer.ReadBytes('\n')
+			bytes, err := NODE_CONNECTIONS[node_index].Reader.ReadBytes('\n')
 			if err != nil {
 				log.Println("Result from node command is invalid")
 				continue
@@ -126,7 +129,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		NODE_CONNECTIONS = append(NODE_CONNECTIONS, conn)
+		NODE_CONNECTIONS = append(NODE_CONNECTIONS, Node{Conn: conn, Reader: bufio.NewReader(conn)})
 	}
 
 	var PORT string
