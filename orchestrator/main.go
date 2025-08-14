@@ -3,14 +3,12 @@ package main
 import (
 	"bufio"
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -41,12 +39,12 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			return
 		}
 
-		line = strings.TrimSpace(line)
-		if line == "" {
+		preparedLine := strings.TrimSpace(line)
+		if preparedLine == "" {
 			continue
 		}
 
-		args := strings.Fields(line)
+		args := strings.Fields(preparedLine)
 		if len(args) == 0 {
 			continue
 		}
@@ -75,22 +73,20 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			return
 		default:
-			// TODO: Find node to send the request
+			// TODO: Issue for getall and commands that don't have keys
+			// TODO: Read commands should return res
+
 			if len(args) < 2 {
 				continue
 			}
 
 			// Consistent hashing
 			key := args[1]
-			hash := md5.Sum([]byte(key))
-			hashString := hex.EncodeToString(hash[:])
-			hashDecimal, err := strconv.ParseInt(hashString, 36, 64)
-			if err != nil {
-				log.Fatal(err)
-			}
+			h := fnv.New32a()
+			h.Write([]byte(key))
 
-			node_index := int(hashDecimal) % len(NODE_CONNECTIONS)
-			res, err := NODE_CONNECTIONS[node_index].Write([]byte(command))
+			node_index := int(h.Sum32()) % len(NODE_CONNECTIONS)
+			res, err := NODE_CONNECTIONS[node_index].Write([]byte(line))
 			if err != nil {
 				// TODO: Log
 				log.Fatal(err)
