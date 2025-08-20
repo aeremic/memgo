@@ -96,7 +96,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		command := strings.ToUpper(args[0])
 		if command == STOP {
 			for i := 0; i < len(NODE_CONNECTIONS); i++ {
-				res, err := NODE_CONNECTIONS[i].Conn.Write([]byte(STOP + "\n"))
+				res, err := NODE_CONNECTIONS[i].Conn.Write([]byte(line))
 				if err != nil {
 					log.Println(err)
 					return
@@ -162,7 +162,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 					msg := strings.TrimSpace(string(bytes))
 					if msg != SUCCESS {
 						conn.Write([]byte(fmt.Sprintf("%s\n", ERROR)))
-						return
+						continue
 					}
 				}
 
