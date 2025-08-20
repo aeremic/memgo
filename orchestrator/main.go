@@ -28,6 +28,8 @@ const (
 	GETALL       = "GETALL"
 	DELETEALL    = "DELETEALL"
 	SELECTBYPATH = "SELECTBYPATH"
+	NOT_FOUND    = "NOT_FOUND"
+	ERROR        = "ERROR"
 )
 
 func getNodeIndex(key string) int {
@@ -113,9 +115,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 			return
 		} else {
 			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH should agreggate results
-			// TODO: getall {"aaa":"bbb"}{"test":"aaa"} and getall NOTFOUND {"test":"aaa"} fix
 			switch command {
-			case GETALL, DELETEALL, SELECTBYPATH:
+			case GETALL, SELECTBYPATH:
 				var out bytes.Buffer
 				for i := 0; i < len(NODE_CONNECTIONS); i++ {
 					err := forwardMsg(i, line)
@@ -130,13 +131,42 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 						continue
 					}
 
-					out.WriteString(string(bytes))
+					msg := strings.TrimSpace(string(bytes))
+					if msg != NOT_FOUND {
+						out.WriteString(msg)
+					}
 				}
 
 				res := out.String()
 				if res != "" {
-					conn.Write([]byte(fmt.Sprintf("%s", res)))
+					conn.Write([]byte(fmt.Sprintf("%s\n", res)))
+				} else {
+					conn.Write([]byte(fmt.Sprintf("%s\n", NOT_FOUND)))
 				}
+
+				continue
+			case DELETEALL:
+				for i := 0; i < len(NODE_CONNECTIONS); i++ {
+					err := forwardMsg(i, line)
+					if err != nil {
+						log.Printf("Error on forwarding message: %v", err)
+						continue
+					}
+
+					bytes, err := receiveMsg(i)
+					if err != nil {
+						log.Printf("Error on receiving message: %v", err)
+						continue
+					}
+
+					msg := strings.TrimSpace(string(bytes))
+					if msg != SUCCESS {
+						conn.Write([]byte(fmt.Sprintf("%s\n", ERROR)))
+						return
+					}
+				}
+
+				conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
 
 				continue
 			default:
