@@ -13,3 +13,11 @@ Memgo is a lightweight, Redis-like in-memory database written in Go, currently i
 - Written in pure Go
 
 ---
+
+## Usage
+
+- To run memgo node <code>./memgo_node host_url port</code>
+- If **host_url** and **port** are not provided, default ones will be used
+- To run memgo orchestrator <code>./memgo_orchestrator path_to_config</code>
+  
+---
