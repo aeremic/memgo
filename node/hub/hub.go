@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	common "memgo_common"
 	"memgo_node/storage"
 	"net"
 	"strings"
@@ -58,13 +59,13 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 		command := strings.ToUpper(args[0])
 		switch command {
-		case STOP:
-			fmt.Printf("%s command received. Stopping thread and terminating hub..\n", STOP)
+		case common.STOP:
+			fmt.Printf("%s command received. Stopping thread and terminating hub..\n", common.STOP)
 			cancel()
-			conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
+			conn.Write([]byte(fmt.Sprintf("%s\n", common.SUCCESS)))
 			return
-		case GETALL:
-			fmt.Printf("%s command received.\n", GETALL)
+		case common.GETALL:
+			fmt.Printf("%s command received.\n", common.GETALL)
 			if len(args) != 1 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -72,8 +73,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.GetAll()
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case GET:
-			fmt.Printf("%s command received.\n", GET)
+		case common.GET:
+			fmt.Printf("%s command received.\n", common.GET)
 			if len(args) != 2 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -81,8 +82,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.Get(args[1])
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case SET:
-			fmt.Printf("%s command received.\n", SET)
+		case common.SET:
+			fmt.Printf("%s command received.\n", common.SET)
 			if len(args) != 3 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -90,8 +91,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.Set(args[1], args[2])
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case DELETEALL:
-			fmt.Printf("%s command received.\n", DELETE)
+		case common.DELETEALL:
+			fmt.Printf("%s command received.\n", common.DELETE)
 			if len(args) != 1 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -99,8 +100,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.DeleteAll()
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case DELETE:
-			fmt.Printf("%s command received.\n", GET)
+		case common.DELETE:
+			fmt.Printf("%s command received.\n", common.GET)
 			if len(args) != 2 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -108,8 +109,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.Delete(args[1])
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case GETBYKEYANDPATH:
-			fmt.Printf("%s command received.\n", GETBYKEYANDPATH)
+		case common.GETBYKEYANDPATH:
+			fmt.Printf("%s command received.\n", common.GETBYKEYANDPATH)
 			if len(args) != 3 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -117,8 +118,8 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			res := storage.GetByKeyAndPath(args[1], args[2])
 			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
-		case SELECTBYPATH:
-			fmt.Printf("%s command received.\n", SELECTBYPATH)
+		case common.SELECTBYPATH:
+			fmt.Printf("%s command received.\n", common.SELECTBYPATH)
 			if len(args) != 2 {
 				log.Printf("Unsupported command %s received.\n", command)
 				continue
@@ -140,7 +141,7 @@ func (h *Hub) Run(ctx context.Context, cancel context.CancelFunc, storage *stora
 	}
 	defer listener.Close()
 
-	fmt.Printf(SUCCESS + "\n")
+	fmt.Printf(common.SUCCESS + "\n")
 	fmt.Println("Listening on ", listener.Addr())
 
 	go func() {
