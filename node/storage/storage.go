@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,7 +14,7 @@ import (
 
 type Key string
 type Value struct {
-	Data string
+	Data any
 }
 
 type Storage struct {
@@ -37,7 +38,7 @@ func (s *Storage) Dispose() string {
 	return common.SUCCESS
 }
 
-func (s *Storage) Get(k string) string {
+func (s *Storage) Get(k string) any {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -61,7 +62,18 @@ func (s *Storage) GetAll() string {
 
 	elements := []string{}
 	for key, value := range s.Map {
-		elements = append(elements, fmt.Sprintf(`"%s":"%s"`, key, value.Data))
+		switch v := value.Data.(type) {
+		case int:
+			elements = append(elements, fmt.Sprintf(`"%s":%d`, key, v))
+		case float64:
+			elements = append(elements, fmt.Sprintf(`"%s":%f`, key, v))
+		case bool:
+			elements = append(elements, fmt.Sprintf(`"%s":%t`, key, v))
+		case string:
+			elements = append(elements, fmt.Sprintf(`"%s":"%s"`, key, v))
+		default:
+			elements = append(elements, fmt.Sprintf(`"%s":%v`, key, v))
+		}
 	}
 
 	if len(elements) > 0 {
@@ -79,7 +91,19 @@ func (s *Storage) Set(k string, d string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.Map[Key(k)] = Value{Data: d}
+	var parsed any
+
+	if integer, err := strconv.Atoi(d); err == nil {
+		parsed = integer
+	} else if float, err := strconv.ParseFloat(d, 64); err == nil {
+		parsed = float
+	} else if boolean, err := strconv.ParseBool(d); err == nil {
+		parsed = boolean
+	} else {
+		parsed = d
+	}
+
+	s.Map[Key(k)] = Value{Data: parsed}
 
 	return common.SUCCESS
 }
@@ -108,7 +132,12 @@ func (s *Storage) GetByKeyAndPath(k string, p string) string {
 
 	res := s.Get(k)
 
-	document, err := jpath.New([]byte(res))
+	strRes, ok := res.(string)
+	if !ok {
+		return common.ERROR
+	}
+
+	document, err := jpath.New([]byte(strRes))
 	if err != nil {
 		return err.Error()
 	}
@@ -129,14 +158,19 @@ func (s *Storage) SelectByPath(p string) string {
 
 	elements := []string{}
 	for key, value := range s.Map {
-		document, err := jpath.New([]byte(value.Data))
+		strRes, ok := value.Data.(string)
+		if !ok {
+			continue
+		}
+
+		document, err := jpath.New([]byte(strRes))
 		if err != nil {
 			continue
 		}
 
 		node := document.GetNode(p)
 		if node != nil && node.String() != "" {
-			elements = append(elements, fmt.Sprintf(`"%s":"%s"`, key, value.Data))
+			elements = append(elements, fmt.Sprintf(`"%s":%s`, key, strRes))
 		}
 	}
 
