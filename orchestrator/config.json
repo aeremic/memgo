@@ -1,0 +1,14 @@
+{
+  "url": "localhost",
+  "port": "1233",
+  "nodes": [
+    {
+      "url": "localhost",
+      "port": "1234"
+    },
+    {
+      "url": "localhost",
+      "port": "1235"
+    }
+  ]
+}

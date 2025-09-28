@@ -10,7 +10,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"strings"
 )
 
@@ -114,9 +113,9 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 
 			return
 		} else {
-			// TODO: Issue for getall and commands that don't have keys; GETALL, DELETEALL and SELECTBYPATH should agreggate results
 			switch command {
 			case GETALL, SELECTBYPATH:
+				// TODO: Aggregate properly instead of returning {}{}{} results
 				var out bytes.Buffer
 				for i := 0; i < len(NODE_CONNECTIONS); i++ {
 					err := forwardMsg(i, line)
@@ -199,10 +198,17 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 }
 
 func main() {
-	nodes := [2]string{"localhost:1234", "localhost:1235"} // TODO: Pull from config file
+	config, err := Get("config.json")
+	if err != nil {
+		log.Fatal("Config file not loaded properly.", err)
+	}
 
-	for i := 0; i < len(nodes); i++ {
-		tcpAddr, err := net.ResolveTCPAddr("tcp", nodes[i])
+	if len(config.Nodes) == 0 {
+		log.Fatal("Nodes not defined properly in the config file.")
+	}
+
+	for i := 0; i < len(config.Nodes); i++ {
+		tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%s", config.Nodes[i].Url, config.Nodes[i].Port))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -215,18 +221,8 @@ func main() {
 		NODE_CONNECTIONS = append(NODE_CONNECTIONS, Node{Conn: conn, Reader: bufio.NewReader(conn)})
 	}
 
-	var PORT string
-	var HOST string
-
-	args := os.Args
-	if len(args) == 3 {
-		HOST = args[1]
-		PORT = args[2]
-	} else {
-		fmt.Printf("Port number and host are not provided, default ones will be used (localhost:1233).\n")
-		HOST = "localhost"
-		PORT = "1233"
-	}
+	HOST := config.Url
+	PORT := config.Port
 
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", HOST, PORT))
 	if err != nil {
