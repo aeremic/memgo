@@ -11,21 +11,6 @@ import (
 	"strings"
 )
 
-const (
-	STOP            = "STOP"
-	GET             = "GET"
-	GETALL          = "GETALL"
-	SET             = "SET"
-	DELETE          = "DELETE"
-	DELETEALL       = "DELETEALL"
-	GETBYKEYANDPATH = "GETBYKEYANDPATH"
-	SELECTBYPATH    = "SELECTBYPATH"
-)
-
-const (
-	SUCCESS = "SUCCESS"
-)
-
 type Hub struct {
 	host string
 	port string

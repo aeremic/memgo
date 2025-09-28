@@ -1,6 +1,7 @@
 package storage
 
 import (
+	common "memgo_common"
 	"testing"
 )
 
@@ -45,7 +46,7 @@ func TestDelete(t *testing.T) {
 	s.Delete("testKey")
 
 	actual := s.Get("testKey")
-	expected := NOT_FOUND
+	expected := common.NOT_FOUND
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
@@ -62,7 +63,7 @@ func TestDeleteAll(t *testing.T) {
 	s.DeleteAll()
 
 	actual := s.GetAll()
-	expected := NOT_FOUND
+	expected := common.NOT_FOUND
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
@@ -94,7 +95,7 @@ func TestGetByKeyAndPath_ShouldReturnEmpty(t *testing.T) {
 	s.Set("testKey2", `{"a":4, "b":5, "cars":{"names": ["Car1", "Car2"]}}`)
 	actual := s.GetByKeyAndPath("testKey", ".people.names[0]")
 
-	expected := NOT_FOUND
+	expected := common.NOT_FOUND
 	if expected != actual {
 		t.Fatalf("invalid actual value. got %s instead of %s",
 			actual, expected)
@@ -148,7 +149,7 @@ func TestSelectByPath_ShouldReturnEmptyResult(t *testing.T) {
 
 	actual := s.SelectByPath(".people.names[0]")
 
-	expected := NOT_FOUND
+	expected := common.NOT_FOUND
 	if expected != actual {
 		t.Fatalf("invalid actual value. got \n%s\ninstead of \n%s\n",
 			actual, expected)

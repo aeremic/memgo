@@ -9,6 +9,7 @@ import (
 	"hash/fnv"
 	"io"
 	"log"
+	common "memgo_common"
 	"net"
 	"strings"
 )
@@ -19,17 +20,6 @@ type Node struct {
 }
 
 var NODE_CONNECTIONS []Node
-
-// TODO: Make common package for command enums
-const (
-	STOP         = "STOP"
-	SUCCESS      = "SUCCESS"
-	GETALL       = "GETALL"
-	DELETEALL    = "DELETEALL"
-	SELECTBYPATH = "SELECTBYPATH"
-	NOT_FOUND    = "NOT_FOUND"
-	ERROR        = "ERROR"
-)
 
 func getNodeIndex(key string) int {
 	h := fnv.New32a()
@@ -93,7 +83,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 		}
 
 		command := strings.ToUpper(args[0])
-		if command == STOP {
+		if command == common.STOP {
 			for i := 0; i < len(NODE_CONNECTIONS); i++ {
 				res, err := NODE_CONNECTIONS[i].Conn.Write([]byte(line))
 				if err != nil {
@@ -107,14 +97,14 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 				}
 			}
 
-			fmt.Printf("%s command received. Stopping thread and terminating orchestrator..\n", STOP)
+			fmt.Printf("%s command received. Stopping thread and terminating orchestrator..\n", common.STOP)
 			cancel()
-			conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
+			conn.Write([]byte(fmt.Sprintf("%s\n", common.SUCCESS)))
 
 			return
 		} else {
 			switch command {
-			case GETALL, SELECTBYPATH:
+			case common.GETALL, common.SELECTBYPATH:
 				// TODO: Aggregate properly instead of returning {}{}{} results
 				var out bytes.Buffer
 				for i := 0; i < len(NODE_CONNECTIONS); i++ {
@@ -131,7 +121,7 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 					}
 
 					msg := strings.TrimSpace(string(bytes))
-					if msg != NOT_FOUND {
+					if msg != common.NOT_FOUND {
 						out.WriteString(msg)
 					}
 				}
@@ -140,11 +130,11 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 				if res != "" {
 					conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 				} else {
-					conn.Write([]byte(fmt.Sprintf("%s\n", NOT_FOUND)))
+					conn.Write([]byte(fmt.Sprintf("%s\n", common.NOT_FOUND)))
 				}
 
 				continue
-			case DELETEALL:
+			case common.DELETEALL:
 				for i := 0; i < len(NODE_CONNECTIONS); i++ {
 					err := forwardMsg(i, line)
 					if err != nil {
@@ -159,13 +149,13 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 					}
 
 					msg := strings.TrimSpace(string(bytes))
-					if msg != SUCCESS {
-						conn.Write([]byte(fmt.Sprintf("%s\n", ERROR)))
+					if msg != common.SUCCESS {
+						conn.Write([]byte(fmt.Sprintf("%s\n", common.ERROR)))
 						continue
 					}
 				}
 
-				conn.Write([]byte(fmt.Sprintf("%s\n", SUCCESS)))
+				conn.Write([]byte(fmt.Sprintf("%s\n", common.SUCCESS)))
 
 				continue
 			default:
@@ -230,7 +220,7 @@ func main() {
 	}
 	defer listener.Close()
 
-	fmt.Printf(SUCCESS + "\n")
+	fmt.Printf(common.SUCCESS + "\n")
 	fmt.Println("Listening on ", listener.Addr())
 
 	ctx, cancel := context.WithCancel(context.Background())

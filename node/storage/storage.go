@@ -6,14 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/xyproto/jpath"
-)
+	common "memgo_common"
 
-const (
-	EMPTY_KEY = "EMPTY_KEY"
-	NOT_FOUND = "NOT_FOUND"
-	EMPTY     = "EMPTY"
-	SUCCESS   = "SUCCESS"
+	"github.com/xyproto/jpath"
 )
 
 type Key string
@@ -39,7 +34,7 @@ func (s *Storage) Dispose() string {
 
 	s = nil
 
-	return SUCCESS
+	return common.SUCCESS
 }
 
 func (s *Storage) Get(k string) string {
@@ -47,12 +42,12 @@ func (s *Storage) Get(k string) string {
 	defer s.mu.Unlock()
 
 	if k == "" {
-		return EMPTY_KEY
+		return common.EMPTY_KEY
 	}
 
 	result, ok := s.Map[Key(k)]
 	if !ok {
-		return NOT_FOUND
+		return common.NOT_FOUND
 	}
 
 	return result.Data
@@ -77,7 +72,7 @@ func (s *Storage) GetAll() string {
 		return out.String()
 	}
 
-	return NOT_FOUND
+	return common.NOT_FOUND
 }
 
 func (s *Storage) Set(k string, d string) string {
@@ -86,7 +81,7 @@ func (s *Storage) Set(k string, d string) string {
 
 	s.Map[Key(k)] = Value{Data: d}
 
-	return SUCCESS
+	return common.SUCCESS
 }
 
 func (s *Storage) Delete(k string) string {
@@ -95,7 +90,7 @@ func (s *Storage) Delete(k string) string {
 
 	delete(s.Map, Key(k))
 
-	return SUCCESS
+	return common.SUCCESS
 }
 
 func (s *Storage) DeleteAll() string {
@@ -104,7 +99,7 @@ func (s *Storage) DeleteAll() string {
 
 	s.Map = make(map[Key]Value)
 
-	return SUCCESS
+	return common.SUCCESS
 }
 
 func (s *Storage) GetByKeyAndPath(k string, p string) string {
@@ -123,7 +118,7 @@ func (s *Storage) GetByKeyAndPath(k string, p string) string {
 		return node.String()
 	}
 
-	return NOT_FOUND
+	return common.NOT_FOUND
 }
 
 func (s *Storage) SelectByPath(p string) string {
@@ -153,5 +148,5 @@ func (s *Storage) SelectByPath(p string) string {
 		return out.String()
 	}
 
-	return NOT_FOUND
+	return common.NOT_FOUND
 }
