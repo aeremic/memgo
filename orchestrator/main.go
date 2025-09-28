@@ -11,6 +11,7 @@ import (
 	"log"
 	common "memgo_common"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -188,7 +189,16 @@ func handleConnection(ctx context.Context, cancel context.CancelFunc, conn net.C
 }
 
 func main() {
-	config, err := Get("config.json")
+	var CONFIG_PATH string
+
+	args := os.Args
+	if len(args) == 1 {
+		CONFIG_PATH = args[0]
+	} else {
+		CONFIG_PATH = "config.json"
+	}
+
+	config, err := Get(CONFIG_PATH)
 	if err != nil {
 		log.Fatal("Config file not loaded properly.", err)
 	}
